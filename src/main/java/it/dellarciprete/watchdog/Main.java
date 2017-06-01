@@ -1,6 +1,12 @@
-package it.dellarciprete.watchdog.jenkins;
+package it.dellarciprete.watchdog;
 
 import java.util.logging.Level;
+
+import it.dellarciprete.watchdog.jenkins.JenkinsWatchDog;
+import it.dellarciprete.watchdog.utils.Configuration;
+import it.dellarciprete.watchdog.utils.WatchDogException;
+import it.dellarciprete.watchdog.utils.WatchDogLogger;
+import it.dellarciprete.watchdog.utils.WatchDogTrayIcon;
 
 public class Main {
 
@@ -9,10 +15,7 @@ public class Main {
       WatchDogTrayIcon.initializeTrayIcon();
       String propertiesFile = System.getProperty("propertiesFile", "config.properties");
       Configuration config = new Configuration(propertiesFile);
-      JenkinsClient jenkinsClient = new JenkinsClient(config);
-      LatestFailure latestFailure = new LatestFailure(config);
-      MailClient mailClient = new MailClient(config);
-      new WatchDog(config, jenkinsClient, latestFailure, mailClient).startControlLoop();
+      new WatchDogPen(config, new JenkinsWatchDog(config)).startControlLoop();
     } catch (WatchDogException e) {
       WatchDogLogger.get().log(Level.SEVERE, "Initialization error", e);
       WatchDogLogger.finalizeLogger();

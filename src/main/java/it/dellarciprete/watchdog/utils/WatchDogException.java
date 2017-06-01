@@ -1,4 +1,4 @@
-package it.dellarciprete.watchdog.jenkins;
+package it.dellarciprete.watchdog.utils;
 
 public class WatchDogException extends Exception {
 
@@ -10,6 +10,10 @@ public class WatchDogException extends Exception {
 
   public WatchDogException(String message, Throwable ex) {
     super(message, ex);
+  }
+
+  public WatchDogException(Throwable ex) {
+    super(ex);
   }
 
 }

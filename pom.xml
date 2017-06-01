@@ -3,11 +3,11 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<groupId>it.dellarciprete</groupId>
-	<artifactId>jenkins-watchdog</artifactId>
+	<artifactId>watchdog</artifactId>
 	<version>1.0</version>
 	<packaging>jar</packaging>
 
-	<name>jenkins-watchdog</name>
+	<name>watchdog</name>
 
 	<properties>
 		<maven.compiler.source>1.8</maven.compiler.source>
@@ -50,7 +50,7 @@
 					</descriptorRefs>
 					<archive>
 						<manifest>
-							<mainClass>it.dellarciprete.watchdog.jenkins.Main</mainClass>
+							<mainClass>it.dellarciprete.watchdog.Main</mainClass>
 						</manifest>
 					</archive>
 					<appendAssemblyId>false</appendAssemblyId>

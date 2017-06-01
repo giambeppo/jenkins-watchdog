@@ -1,4 +1,4 @@
-package it.dellarciprete.watchdog.jenkins;
+package it.dellarciprete.watchdog.utils;
 
 import java.io.IOException;
 import java.util.logging.FileHandler;

@@ -1,4 +1,4 @@
-package it.dellarciprete.watchdog.jenkins;
+package it.dellarciprete.watchdog.common;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -21,10 +21,15 @@ import javax.mail.internet.MimeMessage;
 
 import com.sun.mail.smtp.SMTPTransport;
 
+import it.dellarciprete.watchdog.Alerter;
+import it.dellarciprete.watchdog.utils.Configuration;
+import it.dellarciprete.watchdog.utils.WatchDogException;
+import it.dellarciprete.watchdog.utils.WatchDogLogger;
+
 /**
- * Handles sending the alert email in case of a new build failure.
+ * Sends alerts as emails.
  */
-public class MailClient {
+public class MailClient implements Alerter {
 
   private static final Logger LOGGER = WatchDogLogger.get();
 
@@ -38,82 +43,64 @@ public class MailClient {
   private final String bodyFormat;
   private final File pendingEmail;
 
-  public MailClient(Configuration config) throws WatchDogException {
+  public MailClient(Configuration config, String pendingEmailFileName, String mailSubject, String mailBodyFormat)
+      throws WatchDogException {
     smtpHost = config.get("mail.smtps.host");
-    if (smtpHost == null) {
-      throw new WatchDogException("mail.smtps.host is not configured");
-    }
     smtpPort = config.get("mail.smtps.port", "25");
     username = config.get("mail.username");
-    if (username == null) {
-      throw new WatchDogException("mail.username is not configured");
-    }
     password = config.get("mail.password");
-    if (password == null) {
-      throw new WatchDogException("mail.password is not configured");
-    }
     sender = config.get("mail.sender");
-    if (sender == null) {
-      throw new WatchDogException("mail.sender is not configured");
-    }
     recipients = config.get("mail.recipients");
-    if (recipients == null) {
-      throw new WatchDogException("mail.recipients is not configured");
-    }
-    subject = config.get("mail.subject", "Jenkins build failed");
-    bodyFormat = config.get("mail.body", "A Jenkins build (%s) has failed, please take action!");
-    pendingEmail = new File(config.get("mail.file.pending", "pendingEmail.ser"));
+    subject = mailSubject;
+    bodyFormat = mailBodyFormat;
+    pendingEmail = new File(pendingEmailFileName);
   }
 
-  /**
-   * Tries to send an alert email.
-   * 
-   * <p>If it fails, the mail is stored in pending status in order to be re-sent later.</p>
-   * 
-   * @param url the url of the failed build
-   * @throws MessagingException
-   * @throws IOException
-   */
-  public void sendAlert(String url) throws MessagingException, IOException {
+  @Override
+  public void sendAlert(Object... params) throws WatchDogException {
     LOGGER.log(Level.INFO, "Sending alert email to " + recipients);
     resetPendingAlert();
+    String url = (String) params[0];
     try {
       sendEmail(url);
-    } catch (Exception e) {
+    } catch (MessagingException e) {
       LOGGER.log(Level.WARNING, "Unable to send the alert email, saving it in pending status");
       try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(pendingEmail))) {
         oos.writeUTF(url);
+      } catch (IOException ex) {
+        LOGGER.log(Level.SEVERE, "Unable to store the alert email for later re-sending, it will be lost");
       }
-      throw e;
+      throw new WatchDogException(e);
     }
   }
 
-  /**
-   * If there is a mail pending, tries to send it again. Otherwise, nothing happens.
-   * 
-   * @throws IOException
-   * @throws MessagingException
-   */
-  public void sendAlertIfPending() throws IOException, MessagingException {
+  @Override
+  public void sendAlertIfPending() throws WatchDogException {
     if (pendingEmail.exists()) {
       LOGGER.log(Level.INFO, "Trying again to send the pending email");
       try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(pendingEmail))) {
         String url = ois.readUTF();
         sendEmail(url);
+      } catch (IOException | MessagingException e) {
+        throw new WatchDogException("Error while trying to re-send a pending alert", e);
       }
-      Files.delete(pendingEmail.toPath());
+      try {
+        Files.delete(pendingEmail.toPath());
+      } catch (IOException e) {
+        LOGGER.log(Level.SEVERE, "Error deleting the pending alert email after sending it; it might get sent twice");
+      }
     }
   }
 
-  /**
-   * If there is a mail pending, it is deleted.
-   * 
-   * @throws IOException
-   */
-  public void resetPendingAlert() throws IOException {
+  @Override
+  public void resetPendingAlert() {
     if (pendingEmail.exists()) {
       LOGGER.log(Level.INFO, "Removing the pending email");
-      Files.delete(pendingEmail.toPath());
+      try {
+        Files.delete(pendingEmail.toPath());
+      } catch (IOException e) {
+        LOGGER.log(Level.SEVERE, "Error deleting the pending alert email");
+      }
     }
   }
 

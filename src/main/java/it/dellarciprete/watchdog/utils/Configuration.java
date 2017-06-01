@@ -1,4 +1,4 @@
-package it.dellarciprete.watchdog.jenkins;
+package it.dellarciprete.watchdog.utils;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -21,8 +21,12 @@ public class Configuration {
     }
   }
 
-  public String get(String property) {
-    return configuration.getProperty(property);
+  public String get(String property) throws WatchDogException {
+    String value = configuration.getProperty(property);
+    if (value == null) {
+      throw new WatchDogException(property + " is not configured");
+    }
+    return value;
   }
 
   public String get(String property, String defaultValue) {

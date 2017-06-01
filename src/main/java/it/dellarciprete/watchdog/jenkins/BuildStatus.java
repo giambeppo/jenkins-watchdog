@@ -1,27 +1,30 @@
 package it.dellarciprete.watchdog.jenkins;
 
-public class BuildStatus {
+import it.dellarciprete.watchdog.Status;
 
-  private final int number;
-  private final boolean success;
+public class BuildStatus implements Status<Integer> {
+
+  private final Integer number;
+  private final boolean failure;
   private final String url;
 
-  public BuildStatus(int number, boolean success, String url) {
+  public BuildStatus(Integer number, boolean failure, String url) {
     this.number = number;
-    this.success = success;
+    this.failure = failure;
     this.url = url;
   }
 
-  public int getNumber() {
+  public Integer getId() {
     return number;
   }
 
-  public boolean isSuccess() {
-    return success;
+  public boolean isFailure() {
+    return failure;
   }
 
-  public String getUrl() {
-    return url;
+  @Override
+  public Object[] getParams() {
+    return new Object[] { url };
   }
 
 }

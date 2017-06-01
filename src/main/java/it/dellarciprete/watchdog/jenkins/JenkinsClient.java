@@ -8,16 +8,21 @@ import java.util.logging.Logger;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
-import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.json.JSONException;
 import org.json.JSONObject;
+
+import it.dellarciprete.watchdog.Watcher;
+import it.dellarciprete.watchdog.utils.Configuration;
+import it.dellarciprete.watchdog.utils.WatchDogException;
+import it.dellarciprete.watchdog.utils.WatchDogLogger;
 
 /**
  * Handles the retrieval of the latest build status for a Jenkins job.
  */
-public class JenkinsClient {
+public class JenkinsClient implements Watcher<Integer> {
 
   private static final Logger LOGGER = WatchDogLogger.get();
 
@@ -27,13 +32,7 @@ public class JenkinsClient {
   public JenkinsClient(Configuration config) throws WatchDogException {
     client = new DefaultHttpClient();
     String baseUrl = config.get("jenkins.base.url");
-    if (baseUrl == null) {
-      throw new WatchDogException("jenkins.base.url is not configured");
-    }
     String jobName = config.get("jenkins.job.name");
-    if (jobName == null) {
-      throw new WatchDogException("jenkins.job.name is not configured");
-    }
     requestUrl = baseUrl + "/job/" + jobName + "/lastBuild/api/json";
   }
 
@@ -43,26 +42,35 @@ public class JenkinsClient {
    * <p>The build is considered to be successful even if it is still running.</p>
    * 
    * @return the latest build status
-   * @throws ClientProtocolException
-   * @throws IOException
    * @throws WatchDogException
    */
-  public BuildStatus getLatestBuildStatus() throws ClientProtocolException, IOException, WatchDogException {
+  @Override
+  public BuildStatus getLatestStatus() throws WatchDogException {
     LOGGER.log(Level.INFO, "Sending the request to Jenkins");
     HttpGet request = new HttpGet(requestUrl);
-    HttpResponse response = client.execute(request);
+    HttpResponse response;
+    try {
+      response = client.execute(request);
+    } catch (IOException e) {
+      throw new WatchDogException("Unable to send the request to Jenkins", e);
+    }
     if (response.getStatusLine().getStatusCode() != 200) {
       throw new WatchDogException(String.format("Error sending the request to Jenkins (%s): HTTP code %s", requestUrl,
           response.getStatusLine().getStatusCode()));
     }
-    JSONObject json = new JSONObject(parseResponse(response));
+    JSONObject json;
+    try {
+      json = new JSONObject(parseResponse(response));
+    } catch (JSONException | IOException e) {
+      throw new WatchDogException("Unable to parse the response coming from Jenkins", e);
+    }
     LOGGER.log(Level.INFO, "Jenkins response: " + json.toString());
     int id = json.getInt("number");
     String url = json.getString("url");
     String status = json.getString("result");
     boolean building = json.getBoolean("building");
     boolean success = building || "SUCCESS".equals(status);
-    return new BuildStatus(id, success, url);
+    return new BuildStatus(id, !success, url);
   }
 
   private String parseResponse(HttpResponse response) throws IOException {

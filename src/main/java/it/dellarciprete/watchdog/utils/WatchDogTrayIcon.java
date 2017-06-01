@@ -1,4 +1,4 @@
-package it.dellarciprete.watchdog.jenkins;
+package it.dellarciprete.watchdog.utils;
 
 import java.awt.AWTException;
 import java.awt.Image;
@@ -27,7 +27,7 @@ public class WatchDogTrayIcon {
       return;
     }
     final PopupMenu popup = new PopupMenu();
-    final TrayIcon trayIcon = new TrayIcon(createImage("watchdog.png", "tray icon"), "Jenkins WatchDog");
+    final TrayIcon trayIcon = new TrayIcon(createImage("watchdog.png", "tray icon"), "WatchDog");
     final SystemTray tray = SystemTray.getSystemTray();
     MenuItem exitItem = new MenuItem("Exit");
     exitItem.addActionListener(new ActionListener() {
