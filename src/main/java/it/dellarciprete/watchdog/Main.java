@@ -3,6 +3,7 @@ package it.dellarciprete.watchdog;
 import java.util.logging.Level;
 
 import it.dellarciprete.watchdog.jenkins.JenkinsWatchDog;
+import it.dellarciprete.watchdog.sonarqube.SonarQubeWatchDog;
 import it.dellarciprete.watchdog.utils.Configuration;
 import it.dellarciprete.watchdog.utils.WatchDogException;
 import it.dellarciprete.watchdog.utils.WatchDogLogger;
@@ -15,7 +16,7 @@ public class Main {
       WatchDogTrayIcon.initializeTrayIcon();
       String propertiesFile = System.getProperty("propertiesFile", "config.properties");
       Configuration config = new Configuration(propertiesFile);
-      new WatchDogPen(config, new JenkinsWatchDog(config)).startControlLoop();
+      new WatchDogPen(config, new JenkinsWatchDog(config), new SonarQubeWatchDog(config)).startControlLoop();
     } catch (WatchDogException e) {
       WatchDogLogger.get().log(Level.SEVERE, "Initialization error", e);
       WatchDogLogger.finalizeLogger();

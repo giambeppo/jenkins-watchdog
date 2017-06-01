@@ -16,7 +16,7 @@ import it.dellarciprete.watchdog.utils.WatchDogLogger;
 /**
  * Stores the latest failure id on the filesystem.
  */
-public class FileSystemLatestFailure implements LatestFailure<Integer> {
+public class FileSystemLatestFailure<T> implements LatestFailure<T> {
 
   private static final Logger LOGGER = WatchDogLogger.get();
 
@@ -27,19 +27,20 @@ public class FileSystemLatestFailure implements LatestFailure<Integer> {
   }
 
   /**
-   * Retrieves the id of the latest build failure detected.
+   * Retrieves the id of the latest failure detected.
    * 
-   * @return the id of the latest build failure, null if no failure has been detected yet
+   * @return the id of the latest failure, null if no failure has been detected yet
    * @throws WatchDogException
    */
+  @SuppressWarnings("unchecked")
   @Override
-  public Integer getId() throws WatchDogException {
+  public T getId() throws WatchDogException {
     LOGGER.log(Level.INFO, "Retrieving latest detected failure from " + file.getName());
-    Integer latestFailure = null;
+    T latestFailure = null;
     if (file.exists()) {
       try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(file))) {
-        latestFailure = ois.readInt();
-      } catch (IOException e) {
+        latestFailure = (T) ois.readObject();
+      } catch (IOException | ClassNotFoundException e) {
         throw new WatchDogException(e);
       }
     }
@@ -47,16 +48,16 @@ public class FileSystemLatestFailure implements LatestFailure<Integer> {
   }
 
   /**
-   * Set the id of the latest build failure detected.
+   * Set the id of the latest failure detected.
    * 
-   * @param number the id of the latest build failure
+   * @param id the id of the latest failure
    * @throws IOException
    */
   @Override
-  public void setId(Integer number) throws WatchDogException {
+  public void setId(T id) throws WatchDogException {
     LOGGER.log(Level.INFO, "Storing the latest detected failure in " + file.getName());
     try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(file))) {
-      oos.writeInt(number);
+      oos.writeObject(id);
     } catch (IOException e) {
       throw new WatchDogException(e);
     }

@@ -13,7 +13,7 @@ public class JenkinsWatchDog extends WatchDog<Integer> {
 
   public JenkinsWatchDog(Configuration config) throws WatchDogException {
     super(new JenkinsClient(config),
-        new FileSystemLatestFailure(config.get("jenkins.file.latest.failure", "jenkinsLatestFailure.ser")),
+        new FileSystemLatestFailure<Integer>(config.get("jenkins.file.latest.failure", "jenkinsLatestFailure.ser")),
         new MailClient(config, config.get("jenkins.mail.file.pending", "jenkinsPendingEmail.ser"),
             config.get("jenkins.mail.subject", "Jenkins build failed"),
             config.get("jenkins.mail.body", "A Jenkins build (%s) has failed, please take action!")));

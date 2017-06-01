@@ -56,8 +56,8 @@ public class WatchDogPen {
   }
 
   /**
-   * Shutdown hook allowing for the completion of the currently running control iteration and the correct finalization
-   * of the logger upon receiving the shutdown signal.
+   * Shutdown hook allowing for the completion of the currently executing watchdog and the correct finalization of the
+   * logger upon receiving the shutdown signal.
    */
   private class WatchDogShutdownHook extends Thread {
 
@@ -69,7 +69,7 @@ public class WatchDogPen {
 
     @Override
     public void run() {
-      LOGGER.log(Level.INFO, "Shutdown signal received, waiting for the current control iteration to end");
+      LOGGER.log(Level.INFO, "Shutdown signal received, waiting for the currently working watchdog to end");
       shuttingDown = true;
       try {
         mainThread.interrupt();
