@@ -3,18 +3,24 @@ package it.dellarciprete.watchdog.common;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.util.EntityUtils;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import it.dellarciprete.watchdog.utils.WatchDogException;
+import it.dellarciprete.watchdog.utils.WatchDogLogger;
 
 public class RestClient {
+
+  private static final Logger LOGGER = WatchDogLogger.get();
 
   private final HttpClient client;
   private final String requestUrl;
@@ -33,6 +39,11 @@ public class RestClient {
       throw new WatchDogException("Unable to retrieve " + requestUrl, e);
     }
     if (response.getStatusLine().getStatusCode() != 200) {
+      try {
+        EntityUtils.consume(response.getEntity());
+      } catch (IOException e) {
+        LOGGER.log(Level.WARNING, "Unable to fully consume the response", e);
+      }
       throw new WatchDogException(String.format("Error sending the request to URL %s: HTTP code %s", requestUrl,
           response.getStatusLine().getStatusCode()));
     }
